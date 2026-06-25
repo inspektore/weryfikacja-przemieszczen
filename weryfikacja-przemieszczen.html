@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Weryfikacja przemieszczeń</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f5f7f8;
+      --panel: #ffffff;
+      --ink: #1f2933;
+      --muted: #65717c;
+      --line: #d8e0e6;
+      --accent: #0f6cbd;
+      --accent-weak: #e7f1fb;
+      --ok: #18864b;
+      --warn: #ad6800;
+      --bad: #b42318;
+      --off: #697586;
+      --shadow: 0 1px 3px rgba(15, 23, 42, .08);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 650;
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: minmax(300px, 420px) 1fr;
+      gap: 16px;
+      padding: 16px;
+      max-width: 1680px;
+      margin: 0 auto;
+    }
+
+    section, aside {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow);
+    }
+
+    aside {
+      padding: 16px;
+      display: grid;
+      align-content: start;
+      gap: 14px;
+    }
+
+    .workspace {
+      display: grid;
+      grid-template-rows: auto 150px minmax(330px, 1fr);
+      min-height: calc(100vh - 100px);
+    }
+
+    .toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      flex-wrap: wrap;
+    }
+
+    .toolbar h2, aside h2 {
+      margin: 0;
+      font-size: 15px;
+      font-weight: 650;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button, select, input {
+      font: inherit;
+      border: 1px solid #b8c4ce;
+      background: #fff;
+      color: var(--ink);
+      min-height: 34px;
+    }
+
+    button {
+      border-radius: 4px;
+      padding: 0 12px;
+      cursor: pointer;
+    }
+
+    button.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      font-weight: 600;
+    }
+
+    button:hover { filter: brightness(.98); }
+
+    select, input {
+      border-radius: 4px;
+      padding: 0 8px;
+      min-width: 145px;
+    }
+
+    .picker {
+      position: relative;
+      display: grid;
+      gap: 3px;
+    }
+
+    .picker span {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+    }
+
+    .picker input {
+      padding-right: 30px;
+      border-color: var(--accent);
+      background: #fff;
+      min-width: 178px;
+    }
+
+    .picker::after {
+      content: "▾";
+      position: absolute;
+      right: 10px;
+      bottom: 8px;
+      color: var(--accent);
+      pointer-events: none;
+      font-size: 14px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 210px;
+      resize: vertical;
+      border: 1px solid var(--line);
+      border-radius: 4px;
+      padding: 10px;
+      font: 13px/1.45 Consolas, "Courier New", monospace;
+      color: #202a35;
+      background: #fbfcfd;
+    }
+
+    .hint {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .notice {
+      margin: 0;
+      padding: 10px 12px;
+      border: 1px solid #f0c36a;
+      border-left: 4px solid var(--warn);
+      background: #fff8e5;
+      color: #5f3b00;
+      line-height: 1.45;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(110px, 1fr));
+      gap: 8px;
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      background: #fbfcfd;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      padding: 10px;
+      background: #fff;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 22px;
+      line-height: 1.1;
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .timeline {
+      overflow: auto;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(#fff, #fbfcfd);
+    }
+
+    .nodes {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      min-height: 112px;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .node {
+      position: relative;
+      min-width: 136px;
+      border: 1px solid #c7d3dd;
+      background: #fff;
+      padding: 8px 10px;
+      box-shadow: var(--shadow);
+      border-radius: 4px;
+    }
+
+    .node.focus {
+      border-color: var(--accent);
+      background: var(--accent-weak);
+      box-shadow: inset 0 0 0 2px rgba(15, 108, 189, .18), var(--shadow);
+    }
+
+    .node .id {
+      font-weight: 650;
+      color: #0b4f8f;
+      white-space: nowrap;
+      font-size: 12px;
+    }
+
+    .node .meta {
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 11px;
+    }
+
+    .edge {
+      position: relative;
+      min-width: 104px;
+      height: 74px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--ink);
+      font-size: 11px;
+    }
+
+    .edge::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 36px;
+      height: 3px;
+      background: var(--line);
+      display: block;
+    }
+
+    .edge::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 36px;
+      width: 2px;
+      height: 28px;
+      transform: rotate(34deg);
+      transform-origin: top center;
+      background: var(--line);
+    }
+
+    .edge .event-dot {
+      position: relative;
+      z-index: 1;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 0 0 1px var(--line);
+      background: var(--line);
+    }
+
+    .edge .event-label {
+      position: absolute;
+      left: 50%;
+      top: 69px;
+      transform: translateX(-50%);
+      color: var(--muted);
+      white-space: nowrap;
+      font-size: 11px;
+    }
+
+    .edge.ok::before { background: var(--ok); }
+    .edge.warn::before { background: var(--warn); }
+    .edge.bad::before { background: var(--bad); }
+    .edge.off::before { background: var(--off); }
+    .edge.ok::after, .edge.ok .event-dot { background: var(--ok); }
+    .edge.warn::after, .edge.warn .event-dot { background: var(--warn); }
+    .edge.bad::after, .edge.bad .event-dot { background: var(--bad); }
+    .edge.off::after, .edge.off .event-dot { background: var(--off); }
+
+    .data-area {
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      min-width: 1060px;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    th:nth-child(1), td:nth-child(1) { width: 48px; }
+    th:nth-child(2), td:nth-child(2) { width: 190px; }
+    th:nth-child(3), td:nth-child(3),
+    th:nth-child(4), td:nth-child(4) { width: 135px; }
+    th:nth-child(5), td:nth-child(5) { width: 170px; }
+    th:nth-child(6), td:nth-child(6) { width: 96px; }
+    th:nth-child(7), td:nth-child(7) { width: 112px; }
+    th:nth-child(8), td:nth-child(8) { width: auto; }
+
+    th {
+      position: sticky;
+      top: 0;
+      background: #edf2f7;
+      text-align: left;
+      z-index: 1;
+      font-weight: 650;
+    }
+
+    th, td {
+      border-bottom: 1px solid var(--line);
+      padding: 8px 10px;
+      vertical-align: top;
+    }
+
+    tbody tr:hover { background: #f9fbfd; }
+    tbody tr.selected { background: var(--accent-weak); }
+
+    td.focus-value {
+      background: var(--accent-weak);
+      color: #083f73;
+      font-weight: 650;
+      box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 22px;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .badge.assessment {
+      display: inline;
+      white-space: normal;
+      line-height: 1.45;
+      overflow-wrap: anywhere;
+      word-break: normal;
+    }
+
+    .badge.ok { color: #0f5132; background: #e7f6ed; }
+    .badge.warn { color: #754b00; background: #fff4d6; }
+    .badge.bad { color: #842029; background: #fde8e7; }
+    .badge.off { color: #475467; background: #eef2f6; }
+
+    .issues {
+      display: grid;
+      gap: 8px;
+      max-height: 430px;
+      overflow: auto;
+    }
+
+    .issue {
+      border: 1px solid var(--line);
+      border-left-width: 4px;
+      background: #fff;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .issue.bad { border-left-color: var(--bad); }
+    .issue.warn { border-left-color: var(--warn); }
+    .issue.off { border-left-color: var(--off); }
+    .issue.ok { border-left-color: var(--ok); }
+
+    .issue h3 {
+      margin: 0 0 6px;
+      font-size: 13px;
+    }
+
+    .issue p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .empty {
+      color: var(--muted);
+      padding: 18px;
+      text-align: center;
+    }
+
+    .sr {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+    }
+
+    @media (max-width: 980px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      .workspace {
+        min-height: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Weryfikacja przemieszczeń</h1>
+    <div class="controls">
+      <button id="loadSample">Wczytaj przykład</button>
+      <button id="clearData">Wyczyść</button>
+    </div>
+  </header>
+
+  <main>
+    <aside>
+      <h2>Dane wejściowe</h2>
+      <p class="hint">Wklej skopiowaną tabelę zdarzeń. Program rozpoznaje kolumny: typ zdarzenia, zgłaszająca działalność, komplementarna działalność, numer dokumentu, data zdarzenia i stan.</p>
+      <label>
+        <span class="sr">Wklej dane</span>
+        <textarea id="pasteBox" spellcheck="false"></textarea>
+      </label>
+      <div class="controls">
+        <button class="primary" id="analyze">Analizuj</button>
+        <button id="copyReport">Kopiuj raport</button>
+      </div>
+      <p class="notice">To narzędzie działa lokalnie: dane nie są wysyłane poza komputer. Jest to wersja testowa, więc wyniki warto traktować jako wsparcie analizy i mogą pojawiać się błędy.</p>
+      <h2>Problemy</h2>
+      <div class="issues" id="issues"></div>
+    </aside>
+
+    <section class="workspace">
+      <div>
+        <div class="toolbar">
+          <h2>Podsumowanie</h2>
+          <div class="controls">
+            <select id="statusFilter" aria-label="Filtr statusu">
+              <option value="">Wszystkie statusy</option>
+              <option value="Pasujace">Pasujące</option>
+              <option value="Niepasujace">Niepasujące</option>
+              <option value="Anulowane">Anulowane</option>
+            </select>
+            <label class="picker">
+              <span>Wybierz z danych</span>
+              <input id="herdInput" list="herdOptions" placeholder="Siedziba stada">
+              <datalist id="herdOptions"></datalist>
+            </label>
+            <input id="searchBox" type="search" placeholder="Szukaj działalności lub dokumentu">
+          </div>
+        </div>
+        <div class="summary" id="summary"></div>
+      </div>
+
+      <div class="timeline">
+        <div class="nodes" id="timeline"></div>
+      </div>
+
+      <div class="data-area">
+        <table>
+          <thead>
+            <tr>
+              <th>Lp</th>
+              <th>Typ</th>
+              <th>Zgłaszająca</th>
+              <th>Komplementarna</th>
+              <th>Dokument</th>
+              <th>Data</th>
+              <th>Stan</th>
+              <th>Ocena</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sampleTemplate = `L.p\tTyp zdarzenia\tZgłaszająca działalność\tKomplementarna działalność\tNumer dokumentu\tData zdarzenia\tStan zdarzenia
+1\tWybycie (przemieszczenie)\t{{STADO_D}}\t{{STADO_E}}\t{{DOK_20231027_A}}\t27-10-2023\tPasujące
+2\tPrzybycie (przemieszczenie)\t{{STADO_E}}\t{{STADO_D}}\t{{DOK_20240917_A}}\t27-10-2023\tPasujące
+3\tPrzybycie do rzeźni i ubój\t{{STADO_F}}\t{{STADO_E}}\t{{DOK_20231103_A}}\t27-10-2023\tPasujące
+4\tWybycie (przemieszczenie)\t{{STADO_E}}\t{{STADO_F}}\t{{DOK_20240917_B}}\t27-10-2023\tPasujące
+5\tWybycie (przemieszczenie)\t{{STADO_C}}\t{{STADO_D}}\t{{DOK_20231027_B}}\t26-10-2023\tPasujące
+6\tPrzybycie (przemieszczenie)\t{{STADO_D}}\t{{STADO_C}}\t{{DOK_20231027_C}}\t26-10-2023\tPasujące
+7\tWybycie (przemieszczenie)\t{{STADO_B}}\t{{STADO_C}}\t{{DOK_20231103_B}}\t26-10-2023\tNiepasujące
+8\tPrzybycie (przemieszczenie)\t{{STADO_C}}\t{{STADO_B}}\t{{DOK_20231102_A}}\t26-10-2023\tNiepasujące
+9\tWybycie (przemieszczenie)\t{{STADO_A}}\t{{STADO_B}}\t{{DOK_STARY_22_A}}\t28-10-2022\tAnulowane
+10\tWybycie (przemieszczenie)\t{{STADO_A}}\t{{STADO_B}}\t{{DOK_20231004_A}}\t28-10-2022\tNiepasujące
+11\tWybycie (przemieszczenie)\t{{STADO_A}}\t{{STADO_B}}\t{{DOK_20230623_A}}\t25-10-2022\tPasujące
+12\tPrzybycie (przemieszczenie)\t{{STADO_B}}\t{{STADO_A}}\t{{DOK_STARY_22_B}}\t25-10-2022\tPasujące
+13\tOznakowanie zwierzęcia urodzonego\t{{STADO_A}}\t-\t{{DOK_STARY_21_A}}\t31-01-2021\tPasujące`;
+
+    const pasteBox = document.querySelector("#pasteBox");
+    const rowsBody = document.querySelector("#rows");
+    const issuesBox = document.querySelector("#issues");
+    const summaryBox = document.querySelector("#summary");
+    const timelineBox = document.querySelector("#timeline");
+    const statusFilter = document.querySelector("#statusFilter");
+    const searchBox = document.querySelector("#searchBox");
+    const herdInput = document.querySelector("#herdInput");
+    const herdOptions = document.querySelector("#herdOptions");
+
+    let current = { events: [], groups: [], issues: [] };
+
+    document.querySelector("#loadSample").addEventListener("click", () => {
+      pasteBox.value = randomizedSampleData();
+      runAnalysis();
+    });
+
+    document.querySelector("#clearData").addEventListener("click", () => {
+      pasteBox.value = "";
+      current = { events: [], groups: [], issues: [] };
+      herdInput.value = "";
+      herdOptions.innerHTML = "";
+      render();
+    });
+
+    document.querySelector("#analyze").addEventListener("click", runAnalysis);
+    statusFilter.addEventListener("change", render);
+    searchBox.addEventListener("input", render);
+    herdInput.addEventListener("input", render);
+
+    document.querySelector("#copyReport").addEventListener("click", async () => {
+      const text = buildReport(current);
+      await navigator.clipboard.writeText(text);
+    });
+
+    pasteBox.addEventListener("paste", () => {
+      setTimeout(runAnalysis, 30);
+    });
+
+    function randomizedSampleData() {
+      const herdKeys = Array.from(new Set(
+        Array.from(sampleTemplate.matchAll(/\{\{(STADO_[A-Z])\}\}/g), match => match[1])
+      ));
+      const documentKeys = Array.from(new Set(
+        Array.from(sampleTemplate.matchAll(/\{\{(DOK_[A-Z0-9_]+)\}\}/g), match => match[1])
+      ));
+      const usedHerds = new Set();
+      const usedDocuments = new Set();
+      const replacements = {
+        ...Object.fromEntries(herdKeys.map(key => [key, randomHerdNumber(usedHerds)])),
+        ...Object.fromEntries(documentKeys.map(key => [key, randomDocumentNumber(key, usedDocuments)]))
+      };
+      return sampleTemplate.replace(/\{\{([A-Z0-9_]+)\}\}/g, (_match, key) => replacements[key]);
+    }
+
+    function randomHerdNumber(used) {
+      let value = "";
+      do {
+        const base = randomDigits(9);
+        const suffix = randomDigits(3);
+        value = `${base}-${suffix}`;
+      } while (used.has(value));
+      used.add(value);
+      return value;
+    }
+
+    function randomDigits(length) {
+      let digits = "";
+      for (let i = 0; i < length; i += 1) {
+        digits += Math.floor(Math.random() * 10);
+      }
+      return digits;
+    }
+
+    function randomDocumentNumber(key, used) {
+      let value = "";
+      do {
+        value = key.startsWith("DOK_STARY")
+          ? randomOldDocumentNumber(key)
+          : randomNewDocumentNumber(key);
+      } while (used.has(value));
+      used.add(value);
+      return value;
+    }
+
+    function randomNewDocumentNumber(key) {
+      const date = key.match(/^DOK_(\d{8})/)?.[1] || randomDocumentDate();
+      return `${date}/${randomDigits(9)}`;
+    }
+
+    function randomOldDocumentNumber(key) {
+      const year = key.includes("_21") ? "21" : "22";
+      return `${randomDigits(4)}-${randomDigits(11)}/${year}`;
+    }
+
+    function randomDocumentDate() {
+      const year = 2021 + Math.floor(Math.random() * 4);
+      const month = String(1 + Math.floor(Math.random() * 12)).padStart(2, "0");
+      const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, "0");
+      return `${year}${month}${day}`;
+    }
+
+    function normalizeText(value) {
+      return String(value || "")
+        .trim()
+        .replace(/ł/g, "l")
+        .replace(/Ł/g, "L")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, " ");
+    }
+
+    function normalizeStatus(value) {
+      const v = normalizeText(value).toLowerCase();
+      if (v.includes("niepas")) return "Niepasujace";
+      if (v.includes("anul")) return "Anulowane";
+      if (v.includes("pas")) return "Pasujace";
+      return normalizeText(value) || "Nieznany";
+    }
+
+    function displayStatus(status) {
+      if (status === "Pasujace") return "Pasujące";
+      if (status === "Niepasujace") return "Niepasujące";
+      return status;
+    }
+
+    function parseDate(value) {
+      const clean = normalizeText(value);
+      const parts = clean.match(/^(\d{1,2})-(\d{1,2})-(\d{4})$/);
+      if (!parts) return clean;
+      return `${parts[3]}-${parts[2].padStart(2, "0")}-${parts[1].padStart(2, "0")}`;
+    }
+
+    function displayDate(value) {
+      const parts = String(value).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      return parts ? `${parts[3]}-${parts[2]}-${parts[1]}` : value;
+    }
+
+    function splitLine(line) {
+      if (line.includes("\t")) return line.split("\t");
+      if (line.includes(";")) return line.split(";");
+      return line.split(/\s{2,}/);
+    }
+
+    function detectColumns(header) {
+      const normalized = header.map(h => normalizeText(h).toLowerCase());
+      const find = (...needles) => normalized.findIndex(h => needles.every(n => h.includes(n)));
+      return {
+        lp: find("l.p") >= 0 ? find("l.p") : find("lp"),
+        type: find("typ", "zdarzenia"),
+        reporter: find("zglaszajaca"),
+        complement: find("komplementarna"),
+        documentNo: find("numer", "dokumentu"),
+        date: find("data", "zdarzenia"),
+        status: find("stan", "zdarzenia")
+      };
+    }
+
+    function looksLikeDataLine(line) {
+      const cells = splitLine(line);
+      return /^\d+$/.test(normalizeText(cells[0])) && cells.length >= 6;
+    }
+
+    function defaultColumns() {
+      return { lp: 0, type: 1, reporter: 2, complement: 3, documentNo: 4, date: 5, status: 6 };
+    }
+
+    function parseInput(text) {
+      const lines = text.split(/\r?\n/).map(line => line.trim()).filter(Boolean);
+      if (!lines.length) return [];
+
+      const dataStart = lines.findIndex(looksLikeDataLine);
+      const headerLines = dataStart > 0 ? lines.slice(0, dataStart) : [];
+      const headerCells = headerLines.flatMap(splitLine).filter(Boolean);
+      const detectedColumns = headerCells.length ? detectColumns(headerCells) : {};
+      const fallbackColumns = defaultColumns();
+      const columns = Object.fromEntries(
+        Object.entries(fallbackColumns).map(([key, fallback]) => [
+          key,
+          Number.isInteger(detectedColumns[key]) && detectedColumns[key] >= 0 ? detectedColumns[key] : fallback
+        ])
+      );
+
+      return lines.slice(dataStart >= 0 ? dataStart : 0).filter(looksLikeDataLine).map((line, index) => {
+        const cells = splitLine(line);
+        const event = {
+          id: index + 1,
+          lp: cell(cells, columns.lp) || String(index + 1),
+          type: cell(cells, columns.type),
+          reporter: cell(cells, columns.reporter),
+          complement: cell(cells, columns.complement),
+          documentNo: cell(cells, columns.documentNo),
+          date: parseDate(cell(cells, columns.date)),
+          status: normalizeStatus(cell(cells, columns.status)),
+          rawStatus: cell(cells, columns.status)
+        };
+        const movement = movementFromEvent(event);
+        return { ...event, ...movement };
+      }).filter(event => event.type && event.reporter);
+    }
+
+    function cell(cells, index) {
+      return index >= 0 ? normalizeText(cells[index]) : "";
+    }
+
+    function movementFromEvent(event) {
+      const type = normalizeText(event.type).toLowerCase();
+      if (type.startsWith("wybycie")) {
+        return { role: "wybycie", origin: event.reporter, destination: event.complement };
+      }
+      if (type.startsWith("przybycie")) {
+        return { role: type.includes("uboj") ? "uboj" : "przybycie", origin: event.complement, destination: event.reporter };
+      }
+      return { role: "inne", origin: event.reporter, destination: event.complement };
+    }
+
+    function runAnalysis() {
+      const events = parseInput(pasteBox.value);
+      current = analyze(events);
+      updateHerdOptions(events);
+      render();
+    }
+
+    function analyze(events) {
+      const movementEvents = events.filter(e => e.origin && e.destination && e.destination !== "-" && e.role !== "inne");
+      const map = new Map();
+
+      for (const event of movementEvents) {
+        const key = [event.origin, event.destination, event.date].join("|");
+        if (!map.has(key)) {
+          map.set(key, { key, origin: event.origin, destination: event.destination, date: event.date, events: [] });
+        }
+        map.get(key).events.push(event);
+      }
+
+      const groups = Array.from(map.values()).map(group => {
+        const departures = group.events.filter(e => e.role === "wybycie");
+        const arrivals = group.events.filter(e => e.role === "przybycie" || e.role === "uboj");
+        const statuses = new Set(group.events.map(e => e.status));
+        const hasCanceled = statuses.has("Anulowane");
+        const activeDepartures = departures.filter(e => e.status !== "Anulowane");
+        const canceledDepartures = departures.filter(e => e.status === "Anulowane");
+        let severity = "ok";
+        let title = "Para zgodna";
+        let responsibility = "Obie strony mają odpowiadające zdarzenia.";
+
+        if (hasCanceled) {
+          severity = "off";
+          title = "Dokument anulowany w łańcuchu";
+          responsibility = "Sprawdzić, czy anulowanie zostało zastąpione poprawnym dokumentem.";
+        }
+
+        if (departures.length > 1 && !arrivals.length && activeDepartures.length && canceledDepartures.length) {
+          severity = "bad";
+          title = "Nieanulowane wybycie blokuje zgodność";
+          responsibility = `Działalność ${group.origin} ma anulowane i nadal aktywne wybycie do ${group.destination}. Sugerowane działanie: sprawdzić dokument ${activeDepartures.map(e => e.documentNo).join(", ")} i prawdopodobnie anulować błędne zgłoszenie. Po korekcie dalsze zdarzenia powinny się uzgodnić.`;
+        } else if (!departures.length && arrivals.length) {
+          severity = "bad";
+          title = "Brak wybycia";
+          responsibility = "Do wyjaśnienia po stronie działalności źródłowej.";
+        } else if (departures.length && !arrivals.length) {
+          severity = "bad";
+          title = "Brak przybycia";
+          responsibility = "Do wyjaśnienia po stronie działalności docelowej.";
+        } else if (statuses.has("Niepasujace")) {
+          severity = "bad";
+          title = "Zdarzenie niepasujące";
+          responsibility = "Obie strony zgłosiły ruch, ale dokumenty lub szczegóły wymagają porównania.";
+        } else if (departures.length > 1 || arrivals.length > 1) {
+          severity = "warn";
+          title = "Kilka dokumentów dla tej samej pary";
+          responsibility = "Sprawdzić, który dokument jest aktualny.";
+        }
+
+        return { ...group, departures, arrivals, severity, title, responsibility };
+      }).sort((a, b) => a.date.localeCompare(b.date));
+
+      const issues = groups.filter(g => g.severity !== "ok");
+      return { events, groups, issues };
+    }
+
+    function render() {
+      renderSummary();
+      renderTimeline();
+      renderRows();
+      renderIssues();
+    }
+
+    function getFilteredEvents() {
+      const status = statusFilter.value;
+      const query = normalizeText(searchBox.value).toLowerCase();
+      return current.events.filter(event => {
+        const statusMatch = !status || event.status === status;
+        const text = [event.type, event.reporter, event.complement, event.documentNo, event.date, event.status].join(" ").toLowerCase();
+        const queryMatch = !query || normalizeText(text).toLowerCase().includes(query);
+        return statusMatch && queryMatch;
+      });
+    }
+
+    function renderSummary() {
+      const events = current.events;
+      const issues = current.issues;
+      const matching = current.groups.filter(g => g.severity === "ok").length;
+      const bad = issues.filter(i => i.severity === "bad").length;
+      summaryBox.innerHTML = [
+        metric(events.length, "zdarzeń"),
+        metric(current.groups.length, "wykrytych etapów"),
+        metric(matching, "etapów zgodnych"),
+        metric(bad, "etapów spornych")
+      ].join("");
+    }
+
+    function updateHerdOptions(events) {
+      const currentValue = herdInput.value;
+      const herds = Array.from(new Set(
+        events.flatMap(event => [event.reporter, event.complement, event.origin, event.destination])
+          .filter(value => value && value !== "-")
+      )).sort();
+      herdOptions.innerHTML = herds.map(herd => `<option value="${escapeHtml(herd)}"></option>`).join("");
+      if (currentValue && !herds.includes(currentValue)) herdInput.value = "";
+    }
+
+    function selectedHerd() {
+      return normalizeText(herdInput.value);
+    }
+
+    function isSelectedHerd(value) {
+      const herd = selectedHerd();
+      return herd && normalizeText(value) === herd;
+    }
+
+    function metric(value, label) {
+      return `<div class="metric"><strong>${escapeHtml(value)}</strong><span>${escapeHtml(label)}</span></div>`;
+    }
+
+    function renderTimeline() {
+      if (!current.groups.length) {
+        timelineBox.innerHTML = `<div class="empty">Wklej dane i uruchom analizę.</div>`;
+        return;
+      }
+
+      const groups = current.groups;
+      const firstOrigin = groups[0].origin;
+      let html = nodeHtml(firstOrigin, "początek widocznego łańcucha");
+      for (const group of groups) {
+        html += edgeHtml(group);
+        html += nodeHtml(group.destination, displayDate(group.date));
+      }
+      timelineBox.innerHTML = html;
+    }
+
+    function nodeHtml(id, meta) {
+      const title = `Siedziba stada: ${id}\n${meta}`;
+      return `<div class="node ${isSelectedHerd(id) ? "focus" : ""}" title="${escapeHtml(title)}"><div class="id">${escapeHtml(id)}</div><div class="meta">${escapeHtml(meta)}</div></div>`;
+    }
+
+    function edgeHtml(group) {
+      const tooltip = timelineTooltip(group);
+      return `<div class="edge ${group.severity}" title="${escapeHtml(tooltip)}"><span class="event-dot"></span><span class="event-label">${escapeHtml(shortStatus(group))}</span></div>`;
+    }
+
+    function shortStatus(group) {
+      const title = normalizeText(group.title).toLowerCase();
+      if (group.severity === "ok") return displayDate(group.date);
+      if (title.includes("blokuje")) return "blokada";
+      if (title.includes("brak")) return "brak";
+      if (title.includes("niepasujace")) return "niepas.";
+      if (title.includes("anulowany")) return "anul.";
+      return "sprawdź";
+    }
+
+    function timelineTooltip(group) {
+      const docs = group.events.map(e => `Lp ${e.lp}: ${e.documentNo} (${displayStatus(e.status)})`).join("\n");
+      return [
+        `${group.origin} -> ${group.destination}`,
+        `Data: ${displayDate(group.date)}`,
+        `Ocena: ${group.title}`,
+        group.responsibility,
+        docs ? `Dokumenty:\n${docs}` : ""
+      ].filter(Boolean).join("\n");
+    }
+
+    function renderRows() {
+      const events = getFilteredEvents();
+      if (!events.length) {
+        rowsBody.innerHTML = `<tr><td colspan="8" class="empty">Brak danych do pokazania.</td></tr>`;
+        return;
+      }
+
+      const groupByEventId = new Map();
+      for (const group of current.groups) {
+        for (const event of group.events) groupByEventId.set(event.id, group);
+      }
+
+      rowsBody.innerHTML = events.map(event => {
+        const group = groupByEventId.get(event.id);
+        const severity = group?.severity || statusClass(event.status);
+        const assessment = group ? `${group.title}. ${group.responsibility}` : "Zdarzenie poza parą przemieszczenia.";
+        return `<tr data-event-id="${event.id}">
+          <td>${escapeHtml(event.lp)}</td>
+          <td>${escapeHtml(event.type)}</td>
+          <td class="${isSelectedHerd(event.reporter) ? "focus-value" : ""}">${escapeHtml(event.reporter)}</td>
+          <td class="${isSelectedHerd(event.complement) ? "focus-value" : ""}">${escapeHtml(event.complement)}</td>
+          <td>${escapeHtml(event.documentNo)}</td>
+          <td>${escapeHtml(displayDate(event.date))}</td>
+          <td><span class="badge ${statusClass(event.status)}">${escapeHtml(displayStatus(event.status))}</span></td>
+          <td><span class="badge assessment ${severity}">${escapeHtml(assessment)}</span></td>
+        </tr>`;
+      }).join("");
+    }
+
+    function renderIssues() {
+      if (!current.issues.length) {
+        issuesBox.innerHTML = `<div class="empty">Nie wykryto problemów w parach przemieszczeń.</div>`;
+        return;
+      }
+
+      issuesBox.innerHTML = current.issues.map(issue => {
+        const docs = issue.events.map(e => `${e.lp}: ${e.documentNo}`).join(", ");
+        return `<article class="issue ${issue.severity}" data-key="${escapeHtml(issue.key)}">
+          <h3>${escapeHtml(issue.title)}</h3>
+          <p>${escapeHtml(issue.origin)} -> ${escapeHtml(issue.destination)}, ${escapeHtml(displayDate(issue.date))}</p>
+          <p>${escapeHtml(issue.responsibility)}</p>
+          <p>Dokumenty: ${escapeHtml(docs || "brak")}</p>
+        </article>`;
+      }).join("");
+
+      for (const item of issuesBox.querySelectorAll(".issue")) {
+        item.addEventListener("click", () => selectIssue(item.dataset.key));
+      }
+    }
+
+    function selectIssue(key) {
+      const group = current.groups.find(g => g.key === key);
+      if (!group) return;
+      const ids = new Set(group.events.map(e => String(e.id)));
+      for (const row of rowsBody.querySelectorAll("tr")) {
+        row.classList.toggle("selected", ids.has(row.dataset.eventId));
+      }
+    }
+
+    function statusClass(status) {
+      if (status === "Pasujace") return "ok";
+      if (status === "Niepasujace") return "bad";
+      if (status === "Anulowane") return "off";
+      return "warn";
+    }
+
+    function buildReport(data) {
+      if (!data.events.length) return "Brak danych.";
+      const lines = [
+        "Raport weryfikacji przemieszczeń",
+        `Zdarzenia: ${data.events.length}`,
+        `Etapy: ${data.groups.length}`,
+        `Problemy: ${data.issues.length}`,
+        ""
+      ];
+
+      if (!data.issues.length) {
+        lines.push("Nie wykryto problemów w parach przemieszczeń.");
+      } else {
+        for (const issue of data.issues) {
+          lines.push(`${issue.title}: ${issue.origin} -> ${issue.destination}, ${displayDate(issue.date)}`);
+          lines.push(`Ocena: ${issue.responsibility}`);
+          lines.push(`Dokumenty: ${issue.events.map(e => `${e.lp}/${e.documentNo}/${displayStatus(e.status)}`).join(", ")}`);
+          lines.push("");
+        }
+      }
+      return lines.join("\n");
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, char => ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;"
+      }[char]));
+    }
+
+    render();
+  </script>
+</body>
+</html>
