@@ -159,7 +159,7 @@
       line-height: 1;
     }
 
-    .picker input {
+    .picker select {
       padding-right: 30px;
       border-color: var(--accent);
       background: #fff;
@@ -562,8 +562,9 @@
             </select>
             <label class="picker">
               <span>Wybierz z danych</span>
-              <input id="herdInput" list="herdOptions" placeholder="Siedziba stada">
-              <datalist id="herdOptions"></datalist>
+              <select id="herdInput">
+                <option value="">Wszystkie siedziby</option>
+              </select>
             </label>
             <input id="searchBox" type="search" placeholder="Szukaj działalności lub dokumentu">
           </div>
@@ -620,7 +621,6 @@
     const statusFilter = document.querySelector("#statusFilter");
     const searchBox = document.querySelector("#searchBox");
     const herdInput = document.querySelector("#herdInput");
-    const herdOptions = document.querySelector("#herdOptions");
     const dataFile = document.querySelector("#dataFile");
 
     let current = { events: [], groups: [], issues: [] };
@@ -655,7 +655,7 @@
       current = { events: [], groups: [], issues: [] };
       herdColors = new Map();
       herdInput.value = "";
-      herdOptions.innerHTML = "";
+      herdInput.innerHTML = `<option value="">Wszystkie siedziby</option>`;
       render();
     }
 
@@ -1032,8 +1032,12 @@
         events.flatMap(event => [event.reporter, event.complement, event.origin, event.destination])
           .filter(value => value && value !== "-")
       )).sort();
-      herdOptions.innerHTML = herds.map(herd => `<option value="${escapeHtml(herd)}"></option>`).join("");
+      herdInput.innerHTML = [
+        `<option value="">Wszystkie siedziby</option>`,
+        ...herds.map(herd => `<option value="${escapeHtml(herd)}">${escapeHtml(herd)}</option>`)
+      ].join("");
       if (currentValue && !herds.includes(currentValue)) herdInput.value = "";
+      else herdInput.value = currentValue;
     }
 
     function updateHerdColors(events) {
