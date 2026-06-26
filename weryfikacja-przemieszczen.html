@@ -46,6 +46,27 @@
       font-weight: 650;
     }
 
+    .title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      min-height: 24px;
+      padding: 2px 8px;
+      border: 1px solid #f0c36a;
+      background: #fff8e5;
+      color: #754b00;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
     main {
       display: grid;
       grid-template-columns: minmax(300px, 420px) 1fr;
@@ -467,7 +488,10 @@
 </head>
 <body>
   <header>
-    <h1>Weryfikacja przemieszczeń</h1>
+    <div class="title-row">
+      <h1>Weryfikacja przemieszczeń</h1>
+      <span class="version-badge">wersja testowa 0.2.0</span>
+    </div>
     <div class="controls">
       <button id="loadSample">Wczytaj przykład</button>
       <button id="clearData">Wyczyść</button>

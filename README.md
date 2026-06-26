@@ -40,10 +40,37 @@ Obsługiwane są dane wklejone bezpośrednio z tabeli IRZ, także wtedy, gdy nag
 - rozpoznawanie zdarzeń `Pasujące`, `Niepasujące` i `Anulowane`,
 - wskazywanie brakującego wybycia albo przybycia,
 - wykrywanie sytuacji, w której aktywne nieanulowane wybycie może blokować komplementarność dalszych zdarzeń,
+- rozpoznawanie duplikatów aktywnych wybyć lub przybyć dla tej samej pary,
+- wskazywanie uboju bez odpowiadającego wcześniejszego wybycia,
 - prosta wizualizacja łańcucha przemieszczeń w formie osi/rybiej ości,
 - lista problemów z sugestią, po której stronie należy wyjaśnić zdarzenie,
 - podświetlanie wybranej siedziby stada,
-- kopiowanie raportu tekstowego.
+- kopiowanie raportu tekstowego,
+- pobieranie raportu do pliku `.txt`,
+- wczytywanie danych ze schowka lub pliku tekstowego.
+
+## Interpretacja komunikatów
+
+Najczęstsze komunikaty oznaczają:
+
+- `Brak przybycia` - wybycie zostało zgłoszone, ale brakuje odpowiadającego przybycia po stronie działalności docelowej.
+- `Brak wybycia` - przybycie zostało zgłoszone, ale brakuje odpowiadającego wybycia po stronie działalności źródłowej.
+- `Ubój bez odpowiadającego wybycia` - zarejestrowano przybycie do rzeźni i ubój, ale narzędzie nie widzi wcześniejszego wybycia.
+- `Nieanulowane wybycie blokuje zgodność` - dla tej samej pary istnieje anulowane i nadal aktywne wybycie, które może blokować uspójnienie dalszych zdarzeń.
+- `Zdarzenie niepasujące` - obie strony zgłosiły ruch, ale co najmniej jeden dokument wymaga porównania szczegółów.
+- `Kilka aktywnych wybyć/przybyć` - dla tej samej pary wykryto więcej niż jeden aktywny dokument po jednej ze stron.
+
+## Praca w zespole
+
+Przy udostępnianiu narzędzia innym osobom warto przekazać krótką zasadę: raport z narzędzia jest pomocą w znalezieniu miejsca, od którego należy zacząć sprawdzanie, a nie końcową decyzją administracyjną.
+
+Jeżeli narzędzie pokaże błędną sugestię albo nie rozpozna oczywistego przypadku, najlepiej zachować:
+
+- skopiowaną tabelę zdarzeń z IRZ,
+- informację, który komunikat jest błędny albo czego brakuje,
+- oczekiwaną interpretację sprawy.
+
+Na podstawie takich przykładów można dopisywać kolejne reguły analizy.
 
 ## Przykład problemu
 
