@@ -1069,11 +1069,8 @@
 
       rowsBody.innerHTML = events.map(event => {
         const group = groupByEventId.get(event.id);
-        const severity = group?.severity || statusClass(event.status);
-        const assessmentTitle = group ? group.title : "Poza parą przemieszczenia";
-        const assessmentDetails = group
-          ? `${group.title}. ${group.responsibility}`
-          : "Zdarzenie poza parą przemieszczenia.";
+        const assessment = assessmentForEvent(event, group);
+        const severity = assessment.severity;
         return `<tr data-event-id="${event.id}">
           <td>${escapeHtml(event.lp)}</td>
           <td>${escapeHtml(event.type)}</td>
@@ -1082,9 +1079,34 @@
           <td>${escapeHtml(event.documentNo)}</td>
           <td>${escapeHtml(displayDate(event.date))}</td>
           <td><span class="badge ${statusClass(event.status)}">${escapeHtml(displayStatus(event.status))}</span></td>
-          <td><span class="badge assessment ${severity}" title="${escapeHtml(assessmentDetails)}">${escapeHtml(assessmentTitle)}</span></td>
+          <td><span class="badge assessment ${severity}" title="${escapeHtml(assessment.details)}">${escapeHtml(assessment.title)}</span></td>
         </tr>`;
       }).join("");
+    }
+
+    function assessmentForEvent(event, group) {
+      if (group) {
+        return {
+          severity: group.severity,
+          title: group.title,
+          details: `${group.title}. ${group.responsibility}`
+        };
+      }
+
+      const type = normalizeText(event.type).toLowerCase();
+      if (type.includes("oznakowanie") || type.includes("urodzonego")) {
+        return {
+          severity: statusClass(event.status),
+          title: "Zdarzenie początkowe",
+          details: "Oznakowanie albo zgłoszenie urodzenia jest zdarzeniem pojedynczym i nie wymaga pary wybycie/przybycie."
+        };
+      }
+
+      return {
+        severity: statusClass(event.status),
+        title: "Poza parą przemieszczenia",
+        details: "Zdarzenie nie zostało połączone w parę przemieszczenia."
+      };
     }
 
     function renderIssues() {
