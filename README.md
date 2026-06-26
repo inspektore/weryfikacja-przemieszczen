@@ -46,6 +46,7 @@ Obsługiwane są dane wklejone bezpośrednio z tabeli IRZ, także wtedy, gdy nag
 - lista problemów z sugestią, po której stronie należy wyjaśnić zdarzenie,
 - podświetlanie wybranej siedziby stada,
 - automatyczne łagodne kolorowanie numerów działalności oraz mocniejsze podświetlenie wszystkich wystąpień po najechaniu,
+- filtrowanie widoku zdarzeń po dostępnych numerach dokumentów z możliwością wpisania fragmentu numeru,
 - kopiowanie raportu tekstowego,
 - pobieranie raportu do pliku `.txt`,
 - wczytywanie danych ze schowka lub pliku tekstowego.
