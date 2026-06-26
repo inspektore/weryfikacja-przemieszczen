@@ -916,9 +916,9 @@
           title = "Brak przybycia";
           responsibility = `Działalność ${group.origin} zgłosiła wybycie do ${group.destination}, ale brakuje odpowiadającego przybycia. Sugerowane działanie: wyjaśnić sprawę po stronie działalności docelowej ${group.destination}.`;
         } else if (statuses.has("Niepasujace")) {
-          severity = "bad";
-          title = "Zdarzenie niepasujące";
-          responsibility = `Obie strony zgłosiły ruch ${group.origin} -> ${group.destination}, ale co najmniej jeden dokument ma status niepasujący. Sugerowane działanie: porównać dokumenty ${group.events.map(e => e.documentNo).filter(Boolean).join(", ")} oraz szczegóły zgłoszeń.`;
+          severity = "warn";
+          title = "Para istnieje, ale status jest niepasujący";
+          responsibility = `Wybycie i przybycie tworzą parę dla ruchu ${group.origin} -> ${group.destination} w tej samej dacie, ale co najmniej jeden dokument ma status niepasujący. Sugerowane działanie: nie traktować tego jako braku zdarzenia, tylko porównać dokumenty ${group.events.map(e => e.documentNo).filter(Boolean).join(", ")} oraz szczegóły zgłoszeń.`;
         } else if (departures.length > 1 || arrivals.length > 1) {
           severity = "warn";
           title = "Kilka dokumentów dla tej samej pary";
@@ -1147,7 +1147,7 @@
       if (title.includes("przybyc")) {
         return `działalność docelowa ${issue.destination}`;
       }
-      if (title.includes("niepasujace")) {
+      if (title.includes("niepasujace") || title.includes("niepasujacy")) {
         return `obie strony: ${issue.origin} oraz ${issue.destination}`;
       }
       return `para działalności ${issue.origin} -> ${issue.destination}`;
