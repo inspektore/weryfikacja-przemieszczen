@@ -259,16 +259,23 @@
       position: relative;
       min-width: 136px;
       border: 1px solid #c7d3dd;
-      background: #fff;
+      background: var(--herd-bg, #fff);
       padding: 8px 10px;
       box-shadow: var(--shadow);
       border-radius: 4px;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
     }
 
     .node.focus {
       border-color: var(--accent);
       background: var(--accent-weak);
       box-shadow: inset 0 0 0 2px rgba(15, 108, 189, .18), var(--shadow);
+    }
+
+    .node.herd-hover {
+      border-color: var(--herd-strong, var(--accent));
+      background: var(--herd-hover, var(--accent-weak));
+      box-shadow: inset 0 0 0 2px rgba(15, 108, 189, .2), var(--shadow);
     }
 
     .node .id {
@@ -392,6 +399,27 @@
       color: #083f73;
       font-weight: 650;
       box-shadow: inset 3px 0 0 var(--accent);
+    }
+
+    .herd-chip {
+      display: inline-flex;
+      align-items: center;
+      max-width: 100%;
+      min-height: 22px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      border: 1px solid var(--herd-line, var(--line));
+      background: var(--herd-bg, #fff);
+      color: #1f2933;
+      font-weight: 600;
+      white-space: nowrap;
+      transition: background .15s ease, border-color .15s ease, box-shadow .15s ease;
+    }
+
+    .herd-chip.herd-hover {
+      background: var(--herd-hover, var(--accent-weak));
+      border-color: var(--herd-strong, var(--accent));
+      box-shadow: inset 0 0 0 1px var(--herd-strong, var(--accent));
     }
 
     .badge {
@@ -596,6 +624,17 @@
     const dataFile = document.querySelector("#dataFile");
 
     let current = { events: [], groups: [], issues: [] };
+    let herdColors = new Map();
+    const herdPalette = [
+      { bg: "#e8f4ff", hover: "#c9e6ff", line: "#9bc8ee", strong: "#2f7dbd" },
+      { bg: "#eaf7ee", hover: "#cdeed7", line: "#9bd3ab", strong: "#318154" },
+      { bg: "#fff4db", hover: "#ffe2a8", line: "#e5bd67", strong: "#a46a00" },
+      { bg: "#f3edff", hover: "#e0d1ff", line: "#b9a3e8", strong: "#6c4db3" },
+      { bg: "#e9f7f6", hover: "#ccecea", line: "#93ceca", strong: "#2d7f79" },
+      { bg: "#fdecef", hover: "#fad1d9", line: "#e6a0ad", strong: "#a74355" },
+      { bg: "#edf2f7", hover: "#d9e2ec", line: "#b6c5d4", strong: "#52677a" },
+      { bg: "#f4f1e8", hover: "#e7dec6", line: "#cdbd8f", strong: "#7d6a34" }
+    ];
 
     document.querySelector("#loadSample").addEventListener("click", () => {
       pasteBox.value = randomizedSampleData();
@@ -614,6 +653,7 @@
     function clearInputData() {
       pasteBox.value = "";
       current = { events: [], groups: [], issues: [] };
+      herdColors = new Map();
       herdInput.value = "";
       herdOptions.innerHTML = "";
       render();
@@ -854,6 +894,7 @@
       const events = parseInput(pasteBox.value);
       current = analyze(events);
       updateHerdOptions(events);
+      updateHerdColors(events);
       render();
     }
 
@@ -995,6 +1036,41 @@
       if (currentValue && !herds.includes(currentValue)) herdInput.value = "";
     }
 
+    function updateHerdColors(events) {
+      const herds = Array.from(new Set(
+        events.flatMap(event => [event.reporter, event.complement, event.origin, event.destination])
+          .filter(value => value && value !== "-")
+      )).sort();
+      herdColors = new Map(herds.map((herd, index) => [herd, herdPalette[index % herdPalette.length]]));
+    }
+
+    function herdStyle(value) {
+      const colors = herdColors.get(value);
+      if (!colors) return "";
+      return `--herd-bg:${colors.bg};--herd-hover:${colors.hover};--herd-line:${colors.line};--herd-strong:${colors.strong};`;
+    }
+
+    function herdChip(value) {
+      if (!value || value === "-") return escapeHtml(value || "");
+      return `<span class="herd-chip" data-herd="${escapeHtml(value)}" style="${escapeHtml(herdStyle(value))}">${escapeHtml(value)}</span>`;
+    }
+
+    function attachHerdHover() {
+      const items = document.querySelectorAll("[data-herd]");
+      for (const item of items) {
+        item.addEventListener("mouseenter", () => setHerdHover(item.dataset.herd, true));
+        item.addEventListener("mouseleave", () => setHerdHover(item.dataset.herd, false));
+      }
+    }
+
+    function setHerdHover(herd, enabled) {
+      if (!herd) return;
+      for (const item of document.querySelectorAll("[data-herd]")) {
+        if (item.dataset.herd !== herd) continue;
+        item.classList.toggle("herd-hover", enabled);
+      }
+    }
+
     function selectedHerd() {
       return normalizeText(herdInput.value);
     }
@@ -1022,11 +1098,12 @@
         html += nodeHtml(group.destination, displayDate(group.date));
       }
       timelineBox.innerHTML = html;
+      attachHerdHover();
     }
 
     function nodeHtml(id, meta) {
       const title = `Siedziba stada: ${id}\n${meta}`;
-      return `<div class="node ${isSelectedHerd(id) ? "focus" : ""}" title="${escapeHtml(title)}"><div class="id">${escapeHtml(id)}</div><div class="meta">${escapeHtml(meta)}</div></div>`;
+      return `<div class="node ${isSelectedHerd(id) ? "focus" : ""}" data-herd="${escapeHtml(id)}" style="${escapeHtml(herdStyle(id))}" title="${escapeHtml(title)}"><div class="id">${escapeHtml(id)}</div><div class="meta">${escapeHtml(meta)}</div></div>`;
     }
 
     function edgeHtml(group) {
@@ -1074,14 +1151,15 @@
         return `<tr data-event-id="${event.id}">
           <td>${escapeHtml(event.lp)}</td>
           <td>${escapeHtml(event.type)}</td>
-          <td class="${isSelectedHerd(event.reporter) ? "focus-value" : ""}">${escapeHtml(event.reporter)}</td>
-          <td class="${isSelectedHerd(event.complement) ? "focus-value" : ""}">${escapeHtml(event.complement)}</td>
+          <td class="${isSelectedHerd(event.reporter) ? "focus-value" : ""}">${herdChip(event.reporter)}</td>
+          <td class="${isSelectedHerd(event.complement) ? "focus-value" : ""}">${herdChip(event.complement)}</td>
           <td>${escapeHtml(event.documentNo)}</td>
           <td>${escapeHtml(displayDate(event.date))}</td>
           <td><span class="badge ${statusClass(event.status)}">${escapeHtml(displayStatus(event.status))}</span></td>
           <td><span class="badge assessment ${severity}" title="${escapeHtml(assessment.details)}">${escapeHtml(assessment.title)}</span></td>
         </tr>`;
       }).join("");
+      attachHerdHover();
     }
 
     function assessmentForEvent(event, group) {

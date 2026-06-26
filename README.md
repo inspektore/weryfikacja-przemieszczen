@@ -45,6 +45,7 @@ Obsługiwane są dane wklejone bezpośrednio z tabeli IRZ, także wtedy, gdy nag
 - prosta wizualizacja łańcucha przemieszczeń w formie osi/rybiej ości,
 - lista problemów z sugestią, po której stronie należy wyjaśnić zdarzenie,
 - podświetlanie wybranej siedziby stada,
+- automatyczne łagodne kolorowanie numerów działalności oraz mocniejsze podświetlenie wszystkich wystąpień po najechaniu,
 - kopiowanie raportu tekstowego,
 - pobieranie raportu do pliku `.txt`,
 - wczytywanie danych ze schowka lub pliku tekstowego.
