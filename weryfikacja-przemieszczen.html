@@ -509,6 +509,7 @@
         <button class="primary" id="analyze">Analizuj</button>
         <button id="pasteClipboard">Wklej ze schowka</button>
         <button id="loadFile">Wczytaj plik</button>
+        <button id="clearInput">Wyczyść dane</button>
         <button id="copyReport">Kopiuj raport</button>
         <button id="downloadReport">Pobierz raport</button>
       </div>
@@ -602,12 +603,21 @@
     });
 
     document.querySelector("#clearData").addEventListener("click", () => {
+      clearInputData();
+    });
+
+    document.querySelector("#clearInput").addEventListener("click", () => {
+      clearInputData();
+      pasteBox.focus();
+    });
+
+    function clearInputData() {
       pasteBox.value = "";
       current = { events: [], groups: [], issues: [] };
       herdInput.value = "";
       herdOptions.innerHTML = "";
       render();
-    });
+    }
 
     document.querySelector("#analyze").addEventListener("click", runAnalysis);
     statusFilter.addEventListener("change", render);
