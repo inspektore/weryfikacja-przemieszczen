@@ -406,11 +406,10 @@
     }
 
     .badge.assessment {
-      display: inline;
-      white-space: normal;
-      line-height: 1.45;
-      overflow-wrap: anywhere;
-      word-break: normal;
+      max-width: 100%;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
 
     .badge.ok { color: #0f5132; background: #e7f6ed; }
@@ -1040,7 +1039,10 @@
       rowsBody.innerHTML = events.map(event => {
         const group = groupByEventId.get(event.id);
         const severity = group?.severity || statusClass(event.status);
-        const assessment = group ? `${group.title}. ${group.responsibility}` : "Zdarzenie poza parą przemieszczenia.";
+        const assessmentTitle = group ? group.title : "Poza parą przemieszczenia";
+        const assessmentDetails = group
+          ? `${group.title}. ${group.responsibility}`
+          : "Zdarzenie poza parą przemieszczenia.";
         return `<tr data-event-id="${event.id}">
           <td>${escapeHtml(event.lp)}</td>
           <td>${escapeHtml(event.type)}</td>
@@ -1049,7 +1051,7 @@
           <td>${escapeHtml(event.documentNo)}</td>
           <td>${escapeHtml(displayDate(event.date))}</td>
           <td><span class="badge ${statusClass(event.status)}">${escapeHtml(displayStatus(event.status))}</span></td>
-          <td><span class="badge assessment ${severity}">${escapeHtml(assessment)}</span></td>
+          <td><span class="badge assessment ${severity}" title="${escapeHtml(assessmentDetails)}">${escapeHtml(assessmentTitle)}</span></td>
         </tr>`;
       }).join("");
     }
