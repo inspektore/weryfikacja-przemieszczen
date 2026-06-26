@@ -57,6 +57,7 @@ Najczęstsze komunikaty oznaczają:
 - `Brak wybycia` - przybycie zostało zgłoszone, ale brakuje odpowiadającego wybycia po stronie działalności źródłowej.
 - `Ubój bez odpowiadającego wybycia` - zarejestrowano przybycie do rzeźni i ubój, ale narzędzie nie widzi wcześniejszego wybycia.
 - `Nieanulowane wybycie blokuje zgodność` - dla tej samej pary istnieje anulowane i nadal aktywne wybycie, które może blokować uspójnienie dalszych zdarzeń.
+- `Para istnieje, ale może być blokowana wcześniejszym zgłoszeniem` - wybycie i przybycie tworzą parę, ale ich szczegółowy błąd może wynikać z wcześniejszego aktywnego zgłoszenia dla tej samej historii zwierzęcia.
 - `Zdarzenie niepasujące` - obie strony zgłosiły ruch, ale co najmniej jeden dokument wymaga porównania szczegółów.
 - `Kilka aktywnych wybyć/przybyć` - dla tej samej pary wykryto więcej niż jeden aktywny dokument po jednej ze stron.
 

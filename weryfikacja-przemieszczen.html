@@ -925,11 +925,32 @@
           responsibility = "Sprawdzić, który dokument jest aktualny.";
         }
 
-        return { ...group, departures, arrivals, severity, title, responsibility };
+        return { ...group, departures, arrivals, activeDepartures, activeArrivals, severity, title, responsibility };
       }).sort((a, b) => a.date.localeCompare(b.date));
+
+      markCascadingIssues(groups);
 
       const issues = groups.filter(g => g.severity !== "ok");
       return { events, groups, issues };
+    }
+
+    function markCascadingIssues(groups) {
+      for (const group of groups) {
+        const title = normalizeText(group.title).toLowerCase();
+        if (!title.includes("para istnieje") || !title.includes("niepasujacy")) continue;
+
+        const blocking = groups
+          .filter(candidate => candidate.date <= group.date && candidate.destination === group.origin)
+          .filter(candidate => candidate.activeDepartures?.length && !candidate.activeArrivals?.length)
+          .filter(candidate => candidate.events.some(event => event.status === "Niepasujace"))
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+
+        if (!blocking) continue;
+
+        const documents = blocking.activeDepartures.map(event => event.documentNo).filter(Boolean).join(", ");
+        group.title = "Para istnieje, ale może być blokowana wcześniejszym zgłoszeniem";
+        group.responsibility = `Wybycie i przybycie tworzą parę dla ruchu ${group.origin} -> ${group.destination}, ale szczegółowy błąd może wynikać z wcześniejszego aktywnego wybycia ${blocking.origin} -> ${blocking.destination} z dnia ${displayDate(blocking.date)}. Sugerowane działanie: najpierw sprawdzić dokument ${documents || "z wcześniejszego wybycia"} i jego anulowanie albo korektę, a dopiero potem oceniać parę z lp. ${group.events.map(event => event.lp).join(", ")}.`;
+      }
     }
 
     function render() {
