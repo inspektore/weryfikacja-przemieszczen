@@ -425,6 +425,17 @@
       line-height: 1.4;
     }
 
+    .report-box {
+      max-height: 260px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      background: #fbfcfd;
+      padding: 10px;
+      white-space: pre-wrap;
+      font: 12px/1.45 Consolas, "Courier New", monospace;
+      color: #25313d;
+    }
+
     .empty {
       color: var(--muted);
       padding: 18px;
@@ -474,6 +485,8 @@
       <p class="notice">To narzędzie działa lokalnie: dane nie są wysyłane poza komputer. Jest to wersja testowa, więc wyniki warto traktować jako wsparcie analizy i mogą pojawiać się błędy.</p>
       <h2>Problemy</h2>
       <div class="issues" id="issues"></div>
+      <h2>Raport</h2>
+      <div class="report-box" id="reportPreview">Brak danych.</div>
     </aside>
 
     <section class="workspace">
@@ -541,6 +554,7 @@
     const pasteBox = document.querySelector("#pasteBox");
     const rowsBody = document.querySelector("#rows");
     const issuesBox = document.querySelector("#issues");
+    const reportPreview = document.querySelector("#reportPreview");
     const summaryBox = document.querySelector("#summary");
     const timelineBox = document.querySelector("#timeline");
     const statusFilter = document.querySelector("#statusFilter");
@@ -841,6 +855,7 @@
       renderTimeline();
       renderRows();
       renderIssues();
+      renderReport();
     }
 
     function getFilteredEvents() {
@@ -977,6 +992,7 @@
         return `<article class="issue ${issue.severity}" data-key="${escapeHtml(issue.key)}">
           <h3>${escapeHtml(issue.title)}</h3>
           <p>${escapeHtml(issue.origin)} -> ${escapeHtml(issue.destination)}, ${escapeHtml(displayDate(issue.date))}</p>
+          <p>Do sprawdzenia: ${escapeHtml(issueResponsibleSide(issue))}</p>
           <p>${escapeHtml(issue.responsibility)}</p>
           <p>Dokumenty: ${escapeHtml(docs || "brak")}</p>
         </article>`;
@@ -985,6 +1001,10 @@
       for (const item of issuesBox.querySelectorAll(".issue")) {
         item.addEventListener("click", () => selectIssue(item.dataset.key));
       }
+    }
+
+    function renderReport() {
+      reportPreview.textContent = buildReport(current);
     }
 
     function selectIssue(key) {
@@ -1010,20 +1030,46 @@
         `Zdarzenia: ${data.events.length}`,
         `Etapy: ${data.groups.length}`,
         `Problemy: ${data.issues.length}`,
+        `Wygenerowano: ${new Date().toLocaleString("pl-PL")}`,
         ""
       ];
 
       if (!data.issues.length) {
         lines.push("Nie wykryto problemów w parach przemieszczeń.");
       } else {
-        for (const issue of data.issues) {
-          lines.push(`${issue.title}: ${issue.origin} -> ${issue.destination}, ${displayDate(issue.date)}`);
-          lines.push(`Ocena: ${issue.responsibility}`);
-          lines.push(`Dokumenty: ${issue.events.map(e => `${e.lp}/${e.documentNo}/${displayStatus(e.status)}`).join(", ")}`);
+        data.issues.forEach((issue, index) => {
+          lines.push(`Problem ${index + 1}: ${issue.title}`);
+          lines.push(`Etap: ${issue.origin} -> ${issue.destination}`);
+          lines.push(`Data zdarzenia: ${displayDate(issue.date)}`);
+          lines.push(`Do sprawdzenia: ${issueResponsibleSide(issue)}`);
+          lines.push(`Sugerowane działanie: ${issue.responsibility}`);
+          lines.push(`Powiązane zdarzenia: ${issueRelatedRows(issue)}`);
+          lines.push(`Dokumenty: ${issue.events.map(e => `${e.documentNo} (${displayStatus(e.status)})`).join(", ") || "brak"}`);
           lines.push("");
-        }
+        });
       }
       return lines.join("\n");
+    }
+
+    function issueResponsibleSide(issue) {
+      const title = normalizeText(issue.title).toLowerCase();
+      if (title.includes("brak przybycia") || title.includes("wybycie")) {
+        return `działalność źródłowa ${issue.origin}`;
+      }
+      if (title.includes("brak wybycia") || title.includes("uboj")) {
+        return `działalność źródłowa ${issue.origin}`;
+      }
+      if (title.includes("przybyc")) {
+        return `działalność docelowa ${issue.destination}`;
+      }
+      if (title.includes("niepasujace")) {
+        return `obie strony: ${issue.origin} oraz ${issue.destination}`;
+      }
+      return `para działalności ${issue.origin} -> ${issue.destination}`;
+    }
+
+    function issueRelatedRows(issue) {
+      return issue.events.map(e => `lp. ${e.lp} (${e.type}, ${displayStatus(e.status)})`).join("; ") || "brak";
     }
 
     function escapeHtml(value) {
