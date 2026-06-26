@@ -780,6 +780,9 @@
         const hasCanceled = statuses.has("Anulowane");
         const activeDepartures = departures.filter(e => e.status !== "Anulowane");
         const canceledDepartures = departures.filter(e => e.status === "Anulowane");
+        const activeArrivals = arrivals.filter(e => e.status !== "Anulowane");
+        const canceledArrivals = arrivals.filter(e => e.status === "Anulowane");
+        const slaughterArrivals = arrivals.filter(e => e.role === "uboj");
         let severity = "ok";
         let title = "Para zgodna";
         let responsibility = "Obie strony mają odpowiadające zdarzenia.";
@@ -794,18 +797,32 @@
           severity = "bad";
           title = "Nieanulowane wybycie blokuje zgodność";
           responsibility = `Działalność ${group.origin} ma anulowane i nadal aktywne wybycie do ${group.destination}. Sugerowane działanie: sprawdzić dokument ${activeDepartures.map(e => e.documentNo).join(", ")} i prawdopodobnie anulować błędne zgłoszenie. Po korekcie dalsze zdarzenia powinny się uzgodnić.`;
+        } else if (activeDepartures.length > 1 && activeArrivals.length) {
+          severity = "warn";
+          title = "Kilka aktywnych wybyć dla tej samej pary";
+          responsibility = `Działalność ${group.origin} zgłosiła kilka aktywnych wybyć do ${group.destination}. Sugerowane działanie: ustalić właściwy dokument i anulować albo skorygować nadmiarowe zgłoszenia: ${activeDepartures.map(e => e.documentNo).join(", ")}.`;
+        } else if (activeArrivals.length > 1 && activeDepartures.length) {
+          severity = "warn";
+          title = "Kilka aktywnych przybyć dla tej samej pary";
+          responsibility = `Działalność ${group.destination} ma kilka aktywnych przybyć od ${group.origin}. Sugerowane działanie: sprawdzić, które przybycie odpowiada wybyciu i skorygować nadmiarowe zgłoszenia: ${activeArrivals.map(e => e.documentNo).join(", ")}.`;
+        } else if (activeDepartures.length && activeArrivals.length && (canceledDepartures.length || canceledArrivals.length)) {
+          severity = "warn";
+          title = "Anulowany dokument ma aktywne zastępstwo";
+          responsibility = "W tej parze są dokumenty anulowane oraz aktywne zdarzenia po obu stronach. Sugerowane działanie: upewnić się, że aktywne dokumenty są właściwym zastępstwem anulowanych zgłoszeń.";
         } else if (!departures.length && arrivals.length) {
           severity = "bad";
-          title = "Brak wybycia";
-          responsibility = "Do wyjaśnienia po stronie działalności źródłowej.";
+          title = slaughterArrivals.length ? "Ubój bez odpowiadającego wybycia" : "Brak wybycia";
+          responsibility = slaughterArrivals.length
+            ? `Zarejestrowano przybycie do rzeźni i ubój w działalności ${group.destination}, ale nie ma odpowiadającego wybycia z ${group.origin}. Sugerowane działanie: sprawdzić, czy poprzednia siedziba zgłosiła wybycie.`
+            : `Działalność ${group.destination} zgłosiła przybycie od ${group.origin}, ale brakuje odpowiadającego wybycia. Sugerowane działanie: wyjaśnić sprawę po stronie działalności źródłowej ${group.origin}.`;
         } else if (departures.length && !arrivals.length) {
           severity = "bad";
           title = "Brak przybycia";
-          responsibility = "Do wyjaśnienia po stronie działalności docelowej.";
+          responsibility = `Działalność ${group.origin} zgłosiła wybycie do ${group.destination}, ale brakuje odpowiadającego przybycia. Sugerowane działanie: wyjaśnić sprawę po stronie działalności docelowej ${group.destination}.`;
         } else if (statuses.has("Niepasujace")) {
           severity = "bad";
           title = "Zdarzenie niepasujące";
-          responsibility = "Obie strony zgłosiły ruch, ale dokumenty lub szczegóły wymagają porównania.";
+          responsibility = `Obie strony zgłosiły ruch ${group.origin} -> ${group.destination}, ale co najmniej jeden dokument ma status niepasujący. Sugerowane działanie: porównać dokumenty ${group.events.map(e => e.documentNo).filter(Boolean).join(", ")} oraz szczegóły zgłoszeń.`;
         } else if (departures.length > 1 || arrivals.length > 1) {
           severity = "warn";
           title = "Kilka dokumentów dla tej samej pary";
