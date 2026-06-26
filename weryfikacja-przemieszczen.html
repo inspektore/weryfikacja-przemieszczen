@@ -167,6 +167,10 @@
       background: #fbfcfd;
     }
 
+    input[type="file"] {
+      display: none;
+    }
+
     .hint {
       margin: 0;
       color: var(--muted);
@@ -480,8 +484,12 @@
       </label>
       <div class="controls">
         <button class="primary" id="analyze">Analizuj</button>
+        <button id="pasteClipboard">Wklej ze schowka</button>
+        <button id="loadFile">Wczytaj plik</button>
         <button id="copyReport">Kopiuj raport</button>
+        <button id="downloadReport">Pobierz raport</button>
       </div>
+      <input id="dataFile" type="file" accept=".txt,.csv,.tsv,text/plain,text/csv">
       <p class="notice">To narzędzie działa lokalnie: dane nie są wysyłane poza komputer. Jest to wersja testowa, więc wyniki warto traktować jako wsparcie analizy i mogą pojawiać się błędy.</p>
       <h2>Problemy</h2>
       <div class="issues" id="issues"></div>
@@ -561,6 +569,7 @@
     const searchBox = document.querySelector("#searchBox");
     const herdInput = document.querySelector("#herdInput");
     const herdOptions = document.querySelector("#herdOptions");
+    const dataFile = document.querySelector("#dataFile");
 
     let current = { events: [], groups: [], issues: [] };
 
@@ -585,6 +594,34 @@
     document.querySelector("#copyReport").addEventListener("click", async () => {
       const text = buildReport(current);
       await navigator.clipboard.writeText(text);
+    });
+
+    document.querySelector("#pasteClipboard").addEventListener("click", async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text.trim()) {
+          pasteBox.value = text;
+          runAnalysis();
+        }
+      } catch (_error) {
+        alert("Nie udało się odczytać schowka. Wklej dane ręcznie skrótem Ctrl+V.");
+      }
+    });
+
+    document.querySelector("#loadFile").addEventListener("click", () => {
+      dataFile.click();
+    });
+
+    dataFile.addEventListener("change", async () => {
+      const file = dataFile.files?.[0];
+      if (!file) return;
+      pasteBox.value = await file.text();
+      dataFile.value = "";
+      runAnalysis();
+    });
+
+    document.querySelector("#downloadReport").addEventListener("click", () => {
+      downloadTextFile("raport-weryfikacji-przemieszczen.txt", buildReport(current));
     });
 
     pasteBox.addEventListener("paste", () => {
@@ -652,6 +689,18 @@
       const month = String(1 + Math.floor(Math.random() * 12)).padStart(2, "0");
       const day = String(1 + Math.floor(Math.random() * 28)).padStart(2, "0");
       return `${year}${month}${day}`;
+    }
+
+    function downloadTextFile(filename, content) {
+      const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     }
 
     function normalizeText(value) {
